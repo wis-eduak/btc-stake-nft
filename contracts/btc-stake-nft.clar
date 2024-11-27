@@ -270,3 +270,22 @@
         (as-contract (stx-transfer? rewards-result (as-contract tx-sender) (unwrap-panic (nft-get-owner? bitcoin-backed-nft token-id))))
     )
 )
+
+;; Read-Only Functions
+(define-read-only (get-token-metadata 
+    (token-id uint)
+)
+    (map-get? token-metadata { token-id: token-id })
+)
+
+(define-read-only (get-token-listing 
+    (token-id uint)
+)
+    (map-get? token-listings { token-id: token-id })
+)
+
+(define-read-only (get-current-staking-rewards 
+    (token-id uint)
+)
+    (map-get? staking-rewards { token-id: token-id })
+)
