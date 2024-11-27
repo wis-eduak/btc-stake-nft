@@ -175,3 +175,61 @@
         (ok true)
     )
 )
+
+;; Staking Functions
+(define-public (stake-nft 
+    (token-id uint)
+)
+    (let 
+        ((metadata (unwrap! (map-get? token-metadata { token-id: token-id }) ERR-TOKEN-NOT-FOUND)))
+        ;; Validate staking
+        (asserts! (is-owner-or-authorized token-id) ERR-UNAUTHORIZED)
+        (asserts! (not (get is-staked metadata)) ERR-ALREADY-STAKED)
+        
+        ;; Update metadata
+        (map-set token-metadata 
+            { token-id: token-id }
+            (merge metadata { 
+                is-staked: true,
+                stake-start-height: block-height 
+            })
+        )
+        
+        ;; Initialize staking rewards
+        (map-set staking-rewards 
+            { token-id: token-id }
+            {
+                accumulated-yield: u0,
+                last-claim-height: block-height
+            }
+        )
+        
+        (ok true)
+    )
+)
+
+(define-public (unstake-nft 
+    (token-id uint)
+)
+    (let 
+        ((metadata (unwrap! (map-get? token-metadata { token-id: token-id }) ERR-TOKEN-NOT-FOUND))
+         (rewards (unwrap! (map-get? staking-rewards { token-id: token-id }) ERR-NOT-STAKED)))
+        ;; Validate unstaking
+        (asserts! (is-owner-or-authorized token-id) ERR-UNAUTHORIZED)
+        (asserts! (get is-staked metadata) ERR-NOT-STAKED)
+        
+        ;; Calculate and distribute rewards
+        (try! (claim-staking-rewards token-id))
+        
+        ;; Reset staking status
+        (map-set token-metadata 
+            { token-id: token-id }
+            (merge metadata { 
+                is-staked: false,
+                stake-start-height: u0 
+            })
+        )
+        
+        (ok true)
+    )
+)
