@@ -51,3 +51,15 @@
         last-claim-height: uint
     }
 )
+
+;; Utility Functions
+(define-private (is-owner-or-authorized (token-id uint))
+    (let 
+        ((metadata (unwrap! (map-get? token-metadata { token-id: token-id }) false))
+         (owner (nft-get-owner? bitcoin-backed-nft token-id)))
+        (or 
+            (is-eq tx-sender CONTRACT-OWNER)
+            (and owner (is-eq tx-sender (unwrap-panic owner)))
+        )
+    )
+)
