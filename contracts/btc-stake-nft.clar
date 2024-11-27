@@ -117,3 +117,61 @@
         (ok true)
     )
 )
+
+;; Marketplace Functions
+(define-public (list-nft 
+    (token-id uint) 
+    (price uint)
+)
+    (begin
+        ;; Validate listing
+        (asserts! (is-owner-or-authorized token-id) ERR-UNAUTHORIZED)
+        (asserts! (> price u0) ERR-INVALID-PARAMETERS)
+        (asserts! (is-none (map-get? token-listings { token-id: token-id })) ERR-LISTING-EXISTS)
+        
+        ;; Create listing
+        (map-set token-listings 
+            { token-id: token-id }
+            { 
+                price: price, 
+                seller: tx-sender, 
+                is-active: true 
+            }
+        )
+        
+        (ok true)
+    )
+)
+
+(define-public (purchase-nft 
+    (token-id uint)
+)
+    (let 
+        ((listing (unwrap! (map-get? token-listings { token-id: token-id }) ERR-LISTING-NOT-FOUND))
+         (price (get price listing))
+         (seller (get seller listing))
+         (protocol-fee-amount (/ (* price (var-get protocol-fee)) u1000)))
+        ;; Validate purchase
+        (asserts! (get is-active listing) ERR-LISTING-NOT-FOUND)
+        (asserts! (>= (stx-get-balance tx-sender) price) ERR-INSUFFICIENT-FUNDS)
+        
+        ;; Transfer payment
+        (try! (stx-transfer? price tx-sender seller))
+        (try! (stx-transfer? protocol-fee-amount tx-sender CONTRACT-OWNER))
+        
+        ;; Transfer NFT
+        (try! (nft-transfer? bitcoin-backed-nft token-id seller tx-sender))
+        
+        ;; Update listing
+        (map-set token-listings 
+            { token-id: token-id }
+            { 
+                price: u0, 
+                seller: seller, 
+                is-active: false 
+            }
+        )
+        
+        (ok true)
+    )
+)
