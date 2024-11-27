@@ -233,3 +233,40 @@
         (ok true)
     )
 )
+
+;; Reward Calculation Functions
+(define-private (calculate-rewards 
+    (token-id uint)
+)
+    (let 
+        ((metadata (unwrap! (map-get? token-metadata { token-id: token-id }) (err ERR-TOKEN-NOT-FOUND)))
+         (rewards (unwrap! (map-get? staking-rewards { token-id: token-id }) (err ERR-NOT-STAKED)))
+         (blocks-staked (- block-height (get stake-start-height metadata)))
+         (yield-per-block (/ (var-get yield-rate) u52560))  ;; Blocks per year approximation
+         (new-rewards (* blocks-staked yield-per-block)))
+        (ok (+ (get accumulated-yield rewards) new-rewards))
+    )
+)
+
+(define-private (claim-staking-rewards 
+    (token-id uint)
+)
+    (let 
+        ((metadata (unwrap! (map-get? token-metadata { token-id: token-id }) (err ERR-TOKEN-NOT-FOUND)))
+         (rewards-result (try! (calculate-rewards token-id))))
+        ;; Validate staking
+        (asserts! (get is-staked metadata) (err ERR-NOT-STAKED))
+        
+        ;; Reset rewards tracking
+        (map-set staking-rewards 
+            { token-id: token-id }
+            {
+                accumulated-yield: u0,
+                last-claim-height: block-height
+            }
+        )
+        
+        ;; Transfer rewards
+        (as-contract (stx-transfer? rewards-result (as-contract tx-sender) (unwrap-panic (nft-get-owner? bitcoin-backed-nft token-id))))
+    )
+)
