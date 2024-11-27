@@ -100,3 +100,20 @@
         (ok new-token-id)
     )
 )
+
+(define-public (transfer-nft 
+    (token-id uint) 
+    (recipient principal)
+)
+    (begin
+        ;; Validate transfer
+        (asserts! (is-owner-or-authorized token-id) ERR-UNAUTHORIZED)
+        (asserts! (not (is-eq recipient tx-sender)) ERR-INVALID-PARAMETERS)
+        
+        ;; Transfer NFT
+        (try! (nft-transfer? bitcoin-backed-nft token-id tx-sender recipient))
+        
+        ;; Update metadata if needed
+        (ok true)
+    )
+)
