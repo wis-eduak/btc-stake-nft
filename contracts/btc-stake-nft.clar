@@ -63,3 +63,40 @@
         )
     )
 )
+
+;; Core NFT Functions
+(define-public (mint-nft 
+    (uri (string-ascii 256)) 
+    (collateral-amount uint)
+)
+    (let 
+        ((new-token-id (+ (var-get total-supply) u1))
+         (min-collateral (/ (* (var-get min-collateral-ratio) collateral-amount) u100)))
+        ;; Validate inputs
+        (asserts! (> (len uri) u0) ERR-INVALID-PARAMETERS)
+        (asserts! (>= (stx-get-balance tx-sender) min-collateral) ERR-INSUFFICIENT-FUNDS)
+        
+        ;; Transfer collateral
+        (try! (stx-transfer? min-collateral tx-sender (as-contract tx-sender)))
+        
+        ;; Mint NFT
+        (try! (nft-mint? bitcoin-backed-nft new-token-id tx-sender))
+        
+        ;; Store metadata
+        (map-set token-metadata 
+            { token-id: new-token-id }
+            { 
+                creator: tx-sender,
+                uri: uri,
+                collateral-amount: collateral-amount,
+                is-staked: false,
+                stake-start-height: u0
+            }
+        )
+        
+        ;; Update total supply
+        (var-set total-supply new-token-id)
+        
+        (ok new-token-id)
+    )
+)
