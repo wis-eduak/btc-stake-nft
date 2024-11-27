@@ -34,3 +34,20 @@
         stake-start-height: uint
     }
 )
+
+(define-map token-listings 
+    { token-id: uint }
+    { 
+        price: uint, 
+        seller: principal, 
+        is-active: bool 
+    }
+)
+
+(define-map staking-rewards 
+    { token-id: uint }
+    {
+        accumulated-yield: uint,
+        last-claim-height: uint
+    }
+)
