@@ -22,3 +22,15 @@
 (define-data-var protocol-fee uint u25)  ;; 2.5% fee in basis points
 (define-data-var min-collateral-ratio uint u150)  ;; 150% minimum collateral ratio
 (define-data-var yield-rate uint u50)  ;; 5% annual yield rate in basis points
+
+;; Data Maps
+(define-map token-metadata 
+    { token-id: uint }
+    { 
+        creator: principal,
+        uri: (string-ascii 256),
+        collateral-amount: uint,
+        is-staked: bool,
+        stake-start-height: uint
+    }
+)
