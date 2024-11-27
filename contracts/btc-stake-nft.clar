@@ -289,3 +289,26 @@
 )
     (map-get? staking-rewards { token-id: token-id })
 )
+
+;; Admin Functions
+(define-public (update-protocol-fee 
+    (new-fee uint)
+)
+    (begin
+        (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-UNAUTHORIZED)
+        (asserts! (< new-fee u1000) ERR-INVALID-PARAMETERS)
+        (var-set protocol-fee new-fee)
+        (ok true)
+    )
+)
+
+(define-public (update-min-collateral-ratio 
+    (new-ratio uint)
+)
+    (begin
+        (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-UNAUTHORIZED)
+        (asserts! (> new-ratio u100) ERR-INVALID-PARAMETERS)
+        (var-set min-collateral-ratio new-ratio)
+        (ok true)
+    )
+)
